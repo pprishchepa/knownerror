@@ -7,7 +7,8 @@ import (
 	"fmt"
 )
 
-// Proxy wraps an error and allows it to match multiple sentinel errors via Is/As.
+// Proxy wraps an error, allows it to match multiple sentinel errors via Is/As,
+// and can hold a root cause error.
 type Proxy struct {
 	base    error
 	cause   error
@@ -72,6 +73,7 @@ func (e *Proxy) Extends(errs ...error) *Proxy {
 	return &cpy
 }
 
+// Error returns the error message.
 func (e *Proxy) Error() string {
 	if e.base != nil {
 		return e.base.Error()
@@ -79,6 +81,7 @@ func (e *Proxy) Error() string {
 	return ""
 }
 
+// Unwrap is a hook for errors.Unwrap. Returns the base error.
 func (e *Proxy) Unwrap() error {
 	return e.base
 }
@@ -88,6 +91,7 @@ func (e *Proxy) Cause() error {
 	return e.cause
 }
 
+// Is is a hook for errors.Is. Reports whether any extended error matches target.
 func (e *Proxy) Is(target error) bool {
 	if target == nil {
 		return false
@@ -100,6 +104,7 @@ func (e *Proxy) Is(target error) bool {
 	return false
 }
 
+// As is a hook for errors.As. Finds the first extended error that matches target.
 func (e *Proxy) As(target any) bool {
 	for _, ext := range e.extends {
 		if errors.As(ext, target) {

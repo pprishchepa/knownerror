@@ -103,7 +103,13 @@ func GetUser(id string) (*User, error) {
 // Later, check the error type:
 if errors.Is(err, ErrUserNotFound) {
     // Handle user not found
-    // Access the root cause via err.(*knownerror.Proxy).Cause()
+}
+
+// Access the root cause:
+type Causer interface { Cause() error }
+var causer Causer
+if errors.As(err, &causer) {
+    rootCause := causer.Cause()
 }
 ```
 
@@ -122,30 +128,6 @@ var ErrUserNotFound = knownerror.New("user not found").Extends(ErrNotFound, ErrB
 // Now both checks return true:
 errors.Is(ErrUserNotFound, ErrNotFound)   // true
 errors.Is(ErrUserNotFound, ErrBadRequest) // true
-```
-
-### Working with custom error types
-
-```go
-type ValidationError struct {
-    Field   string
-    Message string
-}
-
-func (e *ValidationError) Error() string {
-    return fmt.Sprintf("%s: %s", e.Field, e.Message)
-}
-
-var ErrValidation = knownerror.New("validation error")
-
-fieldErr := &ValidationError{Field: "email", Message: "invalid format"}
-err := ErrValidation.Extends(fieldErr)
-
-// Extract the ValidationError:
-var valErr *ValidationError
-if errors.As(err, &valErr) {
-    fmt.Println(valErr.Field) // "email"
-}
 ```
 
 ### Formatting with %+v
